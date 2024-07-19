@@ -1,0 +1,6 @@
+{
+  "extends": "@andybarron/presets/tsconfig/default.json",
+  "compilerOptions": {
+    "types": ["vite/client"]
+  }
+}
