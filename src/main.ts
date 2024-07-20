@@ -26,4 +26,3 @@ Object.assign(window, { game, ex });
 
 await game.start();
 game.goToScene("gameplay");
-game.toggleDebug();
