@@ -12,7 +12,7 @@ import {
   type PrimitiveAtom,
   getDefaultStore,
 } from "jotai";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import classNames from "classnames";
 
 const MIN_VIEWPORT_SIZE = 150;
@@ -28,7 +28,7 @@ const sfx = {
   inventory: soundWithVolume("/sfx/inventory.wav", 0.5),
 };
 
-type Inventory = Readonly<Record<string, boolean>>;
+type Inventory = readonly string[];
 type Atoms = {
   inventory: Atom<Inventory>;
   inventoryOpen: PrimitiveAtom<boolean>;
@@ -37,10 +37,7 @@ type Atoms = {
 export class GameplayScene extends BaseScene {
   store = getDefaultStore();
   atoms: Atoms = {
-    inventory: atom<Inventory>({
-      anvil: true,
-      potion_red: true,
-    }),
+    inventory: atom<Inventory>(["anvil", "potion_red", "potion_red"]),
     inventoryOpen: atom(false),
   };
   map!: ti.TiledResource;
@@ -127,19 +124,25 @@ export class GameplayScene extends BaseScene {
 }
 
 function Ui(atoms: Atoms) {
-  const inventory = useAtomValue(atoms.inventory);
+  const items = useAtomValue(atoms.inventory);
   const [showInventory, setShowInventory] = useAtom(atoms.inventoryOpen);
   const iconSrc = showInventory
     ? "/ui/inventory_open.png"
     : "/ui/inventory_closed.png";
 
-  const items = useMemo(
-    () => Object.entries(inventory).filter(([, has]) => has),
-    [inventory],
-  );
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    if (!mountedRef.current) return;
+    sfx.inventory.play();
+  }, [showInventory]);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const toggleInventory = useCallback(() => {
-    sfx.inventory.play();
     setShowInventory((value) => !value);
   }, []);
 
@@ -162,7 +165,7 @@ function Ui(atoms: Atoms) {
               },
             )}
           >
-            {items.map(([name]) => (
+            {items.map((name) => (
               <img
                 draggable="false"
                 src={`/items/${name}.png`}
