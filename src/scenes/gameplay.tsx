@@ -77,16 +77,6 @@ export class GameplayScene extends BaseScene {
     this.camera.strategy.elasticToActor(player, 0.05, 0.5);
     this.camera.zoom = 5;
     this.on("postupdate", this.autoZoom.bind(this));
-
-    // debug
-    if (ENABLE_DEBUG) {
-      this.on("postupdate", () => {
-        ex.Debug.drawText(
-          `Music playing ${song.sound.isPlaying()}`,
-          engine.screenToWorldCoordinates(ex.vec(10, 10)),
-        );
-      });
-    }
   }
 
   private autoZoom() {
