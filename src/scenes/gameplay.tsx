@@ -135,8 +135,29 @@ export class GameplayScene extends BaseScene {
     // ui
     this.ui.render(<Ui {...this.atoms} />);
 
+    // level data
+    const npcObjects = this.map.getObjectLayers("Characters")[0]!.objects;
+    const itemObjects = this.map.getObjectLayers("Items")[0]!.objects;
+    const itemNames = new Set<string>();
+    for (const item of itemObjects) {
+      if (item.name) itemNames.add(item.name.toLowerCase());
+    }
+    for (const npc of npcObjects) {
+      const wantsItem = npc.properties.get("wants")?.toString().toLowerCase();
+      const givesItem = npc.properties.get("gives")?.toString().toLowerCase();
+      if (typeof wantsItem === "string" && !itemNames.has(wantsItem)) {
+        console.warn(
+          `NPC ${npc.name} wants item "${wantsItem}" which does not exist`,
+        );
+      }
+      if (typeof givesItem === "string" && !itemNames.has(givesItem)) {
+        console.warn(
+          `NPC ${npc.name} gives item "${givesItem}" which does not exist`,
+        );
+      }
+    }
+
     // npcs
-    const npcObjects = this.map.getObjectsByProperty("npc");
     for (const npcObject of npcObjects) {
       const actor = this.actors.find((a) => a.name === npcObject.name);
       if (!actor) {
@@ -163,7 +184,6 @@ export class GameplayScene extends BaseScene {
       const desiredItem = npcObject.properties.get("wants");
       if (typeof desiredItem === "string") {
         const itemSprite = items[desiredItem]?.toSprite();
-        console.log(itemSprite);
         const sprite = emotes.blank.toSprite();
         const emoteContainer = new ex.Actor({});
         const emote = new ex.Actor({
@@ -231,6 +251,30 @@ export class GameplayScene extends BaseScene {
           }
         });
       }
+    }
+
+    // items
+    for (const itemObject of itemObjects) {
+      const actor = this.actors.find((a) => a.name === itemObject.name);
+      if (!actor) {
+        console.warn(`Actor not found for item object: ${itemObject.name}`);
+        continue;
+      }
+      actor.z = 75;
+      actor.anchor.setTo(0.5, 0.5);
+      actor.pos.x += actor.width / 2;
+      actor.pos.y -= actor.height / 2;
+      actor.body.collisionType = ex.CollisionType.Passive;
+      let nextTint: ex.Color = ex.Color.Blue;
+      actor.actions.repeatForever((ctx) => {
+        ctx.delay(500).callMethod(() => {
+          const gfx = actor.graphics.current;
+          if (!gfx) return;
+          const currentTint = gfx.tint;
+          gfx.tint = nextTint;
+          nextTint = currentTint;
+        });
+      });
     }
   }
 
