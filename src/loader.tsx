@@ -7,7 +7,7 @@ export class Loader extends ex.DefaultLoader {
     const el = document.createElement("div");
     el.className = [
       "fixed inset-0 p-4 bg-black flex flex-row gap-4 items-center justify-center",
-      "text-white select-none fade-in",
+      "text-white fade-in",
     ].join(" ");
     el.innerHTML = "Loading...";
     return el;

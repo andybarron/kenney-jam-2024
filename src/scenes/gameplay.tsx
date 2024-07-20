@@ -1,11 +1,11 @@
 import * as ex from "excalibur";
 import * as ti from "@excaliburjs/plugin-tiled";
 import { BaseScene } from "~/src/scene.ts";
-import { musicWithVolume, tiles } from "~/src/util.ts";
+import { tiles } from "~/src/util.ts";
 import { Song } from "~/src/song.ts";
 
-const MIN_VIEWPORT_SIZE = 200;
-const MIN_ZOOM = 2;
+const MIN_VIEWPORT_SIZE = 150;
+const MIN_ZOOM = 3;
 const PLAYER_SPEED = tiles(3);
 
 const songs = {
@@ -75,14 +75,11 @@ export class GameplayScene extends BaseScene {
 
   private autoZoom() {
     const smallestScreenDimension = Math.min(
-      this.engine.screen.canvasWidth,
-      this.engine.screen.canvasHeight,
+      this.engine.screen.contentArea.width,
+      this.engine.screen.contentArea.height,
     );
     const scaleFactor = smallestScreenDimension / MIN_VIEWPORT_SIZE;
-    if (scaleFactor <= MIN_ZOOM) {
-      this.camera.zoom = MIN_ZOOM;
-    } else {
-      this.camera.zoom = Math.floor(scaleFactor);
-    }
+    console.log(scaleFactor);
+    this.camera.zoom = Math.max(MIN_ZOOM, Math.floor(scaleFactor));
   }
 }

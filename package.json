@@ -4,7 +4,7 @@
   "description": "Kenney Jam 2024 entry",
   "type": "module",
   "scripts": {
-    "dev": "vite --open",
+    "dev": "vite --host --open",
     "build": "tsc && vite build",
     "preview": "vite build && vite preview",
     "start": "serve -Ln node_modules/.vite",

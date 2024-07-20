@@ -5,6 +5,7 @@ html, body {
   margin: 0;
   padding: 0;
   cursor: url("/ui/cursor_2x.png"), auto;
+  user-select: none;
 }
 
 @keyframes fade-in {

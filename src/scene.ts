@@ -30,7 +30,7 @@ export class BaseScene extends ex.Scene {
 function createEl() {
   const el = document.createElement("div");
   el.dataset["ui"] = "";
-  el.className = "fixed inset-0 p-0 m-0 pointer-events-none select-none";
+  el.className = "fixed inset-0 p-0 m-0 pointer-events-none";
   return el;
 }
 
