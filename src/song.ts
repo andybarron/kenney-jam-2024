@@ -6,7 +6,13 @@ export type SongParams = {
   volume?: number;
 };
 
-let current: Song | undefined;
+let currentlyPlaying: Song | undefined;
+
+// TODO: validate
+window.addEventListener("focus", () => {
+  currentlyPlaying?.sound.play();
+});
+
 export class Song implements ex.Loadable<Song> {
   readonly sound: ex.Sound;
   readonly volume: number;
@@ -22,14 +28,21 @@ export class Song implements ex.Loadable<Song> {
     this.stopFading();
     this.sound.volume = volume;
     this.sound.play();
+    currentlyPlaying = this;
   }
   stop() {
     this.stopFading();
     this.sound.stop();
+    if (currentlyPlaying === this) {
+      currentlyPlaying = undefined;
+    }
   }
   pause() {
     this.stopFading();
     this.sound.pause();
+    if (currentlyPlaying === this) {
+      currentlyPlaying = undefined;
+    }
   }
   private stopFading() {
     clearInterval(this.fadeInterval);
@@ -80,9 +93,13 @@ export class Song implements ex.Loadable<Song> {
     if (!this.sound.isPlaying()) {
       return;
     }
+    if (currentlyPlaying === this) {
+      currentlyPlaying = undefined;
+    }
     return await this.fadeVolume(0, seconds);
   }
   async fadeTo(other: Song, seconds: number): Promise<void> {
+    currentlyPlaying = other;
     await this.fadeOut(seconds / 2);
     return await other.fadeIn(seconds / 2);
   }

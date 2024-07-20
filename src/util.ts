@@ -40,3 +40,5 @@ export function makeResolvablePromise<T>() {
   });
   return { promise, resolve, reject };
 }
+
+export const TOUCH_SUPPORTED = "ontouchstart" in window;

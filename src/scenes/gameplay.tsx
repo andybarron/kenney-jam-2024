@@ -1,7 +1,7 @@
 import * as ex from "excalibur";
 import * as ti from "@excaliburjs/plugin-tiled";
 import { BaseScene } from "~/src/scene.ts";
-import { tiles } from "~/src/util.ts";
+import { emptyLoadable, tiles } from "~/src/util.ts";
 import { Song } from "~/src/song.ts";
 
 const MIN_VIEWPORT_SIZE = 150;
@@ -23,6 +23,15 @@ export class GameplayScene extends BaseScene {
     loader.addResource(map);
     map.load();
     this.map = map;
+
+    // enable delay for testing
+    const params = new URLSearchParams(location.search);
+    const delayValue = params.get("delay");
+    if (delayValue != null) {
+      const parsed = Number.parseInt(delayValue);
+      const seconds = parsed > 0 ? parsed : 10;
+      loader.addResource(emptyLoadable(seconds));
+    }
   }
   override onInitialize(engine: ex.Engine): void {
     super.onInitialize(engine);

@@ -4,8 +4,8 @@ html, body {
   background: black;
   margin: 0;
   padding: 0;
-  cursor: url("/ui/cursor_2x.png"), auto;
   user-select: none;
+  image-rendering: crisp-edges;
 }
 
 @keyframes fade-in {
@@ -17,6 +17,32 @@ html, body {
   }
 }
 
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wiggle {
+  from {
+    transform: translate(-1px);
+  }
+  to {
+    transform: translate(1px);
+  }
+}
+
 .fade-in {
   animation: fade-in 1s ease-out;;
+}
+
+.animate-pixel-spin {
+  animation: spin 1s steps(4) infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 1s steps(3) infinite;
 }
