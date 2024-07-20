@@ -4,6 +4,7 @@ html, body {
   background: black;
   margin: 0;
   padding: 0;
+  cursor: url("/ui/cursor_2x.png"), auto;
 }
 
 @keyframes fade-in {

@@ -6,9 +6,9 @@ export class MainMenuScene extends BaseScene {
   override onInitialize(engine: ex.Engine): void {
     super.onInitialize(engine);
 
-    async function newGame() {
-      // TODO
-    }
+    const newGame = () => {
+      this.engine.goToScene("tiledTest");
+    };
 
     this.ui.render(
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 text-white">

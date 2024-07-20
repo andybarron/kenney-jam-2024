@@ -1,6 +1,10 @@
 {
   "extends": "@andybarron/presets/tsconfig/default.json",
   "compilerOptions": {
-    "types": ["vite/client"]
-  }
+    "types": ["vite/client"],
+    "paths": {
+      "~/*": ["./*"]
+    }
+  },
+  "references": [{ "path": "./tsconfig.config.json" }]
 }

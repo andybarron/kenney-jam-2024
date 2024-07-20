@@ -1,4 +1,4 @@
-import type * as ex from "excalibur";
+import * as ex from "excalibur";
 
 export const emptyLoadable = (seconds: number = 0): ex.Loadable<void> => {
   let loaded = false;
@@ -14,3 +14,29 @@ export const emptyLoadable = (seconds: number = 0): ex.Loadable<void> => {
       }),
   };
 };
+
+export function tiles(n: number) {
+  return 16 * n;
+}
+
+export function soundWithVolume(url: string, volume: number) {
+  const sound = new ex.Sound(url);
+  sound.volume = volume;
+  return sound;
+}
+
+export function musicWithVolume(url: string, volume: number) {
+  const music = soundWithVolume(url, volume);
+  music.loop = true;
+  return music;
+}
+
+export function makeResolvablePromise<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}

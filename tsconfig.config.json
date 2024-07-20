@@ -1,0 +1,11 @@
+{
+  "include": ["**/*"],
+  "exclude": ["node_modules", "src", "assets"],
+  "extends": "@andybarron/presets/tsconfig/default.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "~/*": ["./src/*", "./*"]
+    }
+  }
+}

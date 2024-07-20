@@ -38,7 +38,7 @@ export class Loader extends ex.DefaultLoader {
   }
 
   override async onBeforeLoad(): Promise<void> {
-    this.loaded = false;
+    this.loaded = this.resources.every((r) => r.isLoaded());
     document.body.appendChild(this.overlay);
     this.onUpdate();
     this.root.render(<LoaderCircleIcon className="animate-spin" />);

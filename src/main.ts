@@ -1,8 +1,10 @@
-import { logger } from "./logger.ts";
-
 import * as ex from "excalibur";
-import { MainMenuScene } from "./scenes/main_menu";
 import { Loader } from "./loader.tsx";
+import { GameplayScene } from "~/src/scenes/gameplay.tsx";
+
+window.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+});
 
 const game = new ex.Engine({
   backgroundColor: ex.Color.Black,
@@ -10,17 +12,17 @@ const game = new ex.Engine({
   pixelArt: true,
   pointerScope: ex.PointerScope.Canvas,
   scrollPreventionMode: ex.ScrollPreventionMode.All,
-  snapToPixel: true,
+  snapToPixel: false,
   viewport: { width: 800, height: 600 },
   scenes: {
-    mainMenu: {
-      scene: new MainMenuScene(),
-      loader: Loader,
+    gameplay: {
+      scene: new GameplayScene(),
+      loader: new Loader(),
     },
   },
 });
 
-Object.assign(window, { game, logger, ex });
+Object.assign(window, { game, ex });
 
 await game.start();
-game.goToScene("mainMenu");
+game.goToScene("gameplay");
