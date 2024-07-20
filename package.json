@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host --open",
     "build": "tsc && vite build",
-    "preview": "vite build && vite preview",
+    "preview": "vite build && vite preview --host",
     "start": "serve -Ln node_modules/.vite",
     "tc": "tsc --build",
     "viz": "vite-bundle-visualizer"

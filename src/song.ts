@@ -6,11 +6,20 @@ export type SongParams = {
   volume?: number;
 };
 
+// TODO: focus/blur tracking per-instance instead of global
 let currentlyPlaying: Song | undefined;
 
 // TODO: validate
 window.addEventListener("focus", () => {
-  currentlyPlaying?.sound.play();
+  if (currentlyPlaying && currentlyPlaying.sound.isPaused()) {
+    currentlyPlaying.play();
+  }
+});
+
+window.addEventListener("blur", () => {
+  if (currentlyPlaying && currentlyPlaying.sound.isPlaying()) {
+    currentlyPlaying.pause(true);
+  }
 });
 
 export class Song implements ex.Loadable<Song> {
@@ -37,10 +46,10 @@ export class Song implements ex.Loadable<Song> {
       currentlyPlaying = undefined;
     }
   }
-  pause() {
+  pause(resumeOnFocus = false) {
     this.stopFading();
     this.sound.pause();
-    if (currentlyPlaying === this) {
+    if (currentlyPlaying === this && !resumeOnFocus) {
       currentlyPlaying = undefined;
     }
   }
@@ -54,13 +63,11 @@ export class Song implements ex.Loadable<Song> {
   private fadeVolume(endVolume: number, seconds: number): Promise<void> {
     this.stopFading();
     const volumePerSecond = (endVolume - this.sound.volume) / seconds;
-    console.log({ volumePerSecond });
     if (volumePerSecond === 0) return Promise.resolve();
     let last = performance.now();
     const { resolve, promise } = makeResolvablePromise<void>();
     this.onFadeEnd = resolve;
     this.fadeInterval = setInterval(() => {
-      console.log("fade interval");
       let now = performance.now();
       const delta = (now - last) / 1_000;
       last = now;

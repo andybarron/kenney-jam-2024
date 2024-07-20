@@ -67,7 +67,7 @@ export class GameplayScene extends BaseScene {
           player.vel.size = 0;
         } else {
           if (Math.sign(player.vel.x) !== 0 && Math.abs(player.vel.x) > 2) {
-            player.scale.x = Math.sign(player.vel.x);
+            player.graphics.current!.scale.x = Math.sign(player.vel.x);
           }
 
           player.vel.size = PLAYER_SPEED;
@@ -88,7 +88,6 @@ export class GameplayScene extends BaseScene {
       this.engine.screen.contentArea.height,
     );
     const scaleFactor = smallestScreenDimension / MIN_VIEWPORT_SIZE;
-    console.log(scaleFactor);
     this.camera.zoom = Math.max(MIN_ZOOM, Math.floor(scaleFactor));
   }
 }
