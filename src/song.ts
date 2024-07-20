@@ -6,19 +6,26 @@ export type SongParams = {
   volume?: number;
 };
 
-// TODO: focus/blur tracking per-instance instead of global
+// TODO: hide/show tracking per-instance instead of global
 let currentlyPlaying: Song | undefined;
 
 // TODO: validate
-window.addEventListener("focus", () => {
-  if (currentlyPlaying && currentlyPlaying.sound.isPaused()) {
+function pauseOnHide() {
+  if (currentlyPlaying?.sound.isPlaying()) {
+    currentlyPlaying.pause(true);
+  }
+}
+function resumeOnShow() {
+  if (currentlyPlaying?.sound.isPaused()) {
     currentlyPlaying.play();
   }
-});
+}
 
-window.addEventListener("blur", () => {
-  if (currentlyPlaying && currentlyPlaying.sound.isPlaying()) {
-    currentlyPlaying.pause(true);
+window.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden" || document.hidden) {
+    pauseOnHide();
+  } else {
+    resumeOnShow();
   }
 });
 
