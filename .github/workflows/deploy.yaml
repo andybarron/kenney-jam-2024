@@ -53,8 +53,8 @@ jobs:
       - name: Log into DigitalOcean cluster with temporary credentials
         run: doctl kubernetes cluster kubeconfig save --expiry-seconds 600 apps
 
-      # - name: Restart k8s deployment
-      #   run: kubectl rollout restart -n apps deployment/dungeonrat
+      - name: Restart k8s deployment
+        run: kubectl rollout restart -n apps deployment/dungeonrat
 
-      # - name: Verify deployment
-      #   run: kubectl rollout status -n apps deployment/dungeonrat
+      - name: Verify deployment
+        run: kubectl rollout status -n apps deployment/dungeonrat
