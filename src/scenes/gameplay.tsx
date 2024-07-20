@@ -3,7 +3,17 @@ import * as ti from "@excaliburjs/plugin-tiled";
 import { BaseScene } from "~/src/scene.ts";
 import { emptyLoadable, tiles } from "~/src/util.ts";
 import { Song } from "~/src/song.ts";
-import { ENABLE_DEBUG, LOAD_DELAY } from "~/src/debug.ts";
+import { LOAD_DELAY } from "~/src/debug.ts";
+import {
+  atom,
+  useAtom,
+  useAtomValue,
+  type Atom,
+  type PrimitiveAtom,
+  getDefaultStore,
+} from "jotai";
+import { useMemo } from "react";
+import classNames from "classnames";
 
 const MIN_VIEWPORT_SIZE = 150;
 const MIN_ZOOM = 3;
@@ -14,7 +24,21 @@ const songs = {
   it_takes_a_hero: new Song({ url: "/music/it_takes_a_hero.mp3", volume: 0.5 }),
 } as const;
 
+type Inventory = Readonly<Record<string, boolean>>;
+type Atoms = {
+  inventory: Atom<Inventory>;
+  inventoryOpen: PrimitiveAtom<boolean>;
+};
+
 export class GameplayScene extends BaseScene {
+  store = getDefaultStore();
+  atoms: Atoms = {
+    inventory: atom<Inventory>({
+      anvil: true,
+      potion_red: true,
+    }),
+    inventoryOpen: atom(false),
+  };
   map!: ti.TiledResource;
   override onPreLoad(loader: ex.DefaultLoader): void {
     super.onPreLoad(loader);
@@ -55,6 +79,10 @@ export class GameplayScene extends BaseScene {
       movementDesired = this.input.pointers.isDown(0);
       player.vel.setTo(0, 0);
       if (movementDesired) {
+        if (this.store.get(this.atoms.inventoryOpen)) {
+          this.store.set(this.atoms.inventoryOpen, false);
+        }
+
         const destScreenPos = this.input.pointers.primary.lastScreenPos;
         const srcScreenPos = engine.worldToScreenCoordinates(player.pos);
         player.vel.x = destScreenPos.x - srcScreenPos.x;
@@ -77,6 +105,9 @@ export class GameplayScene extends BaseScene {
     this.camera.strategy.elasticToActor(player, 0.05, 0.5);
     this.camera.zoom = 5;
     this.on("postupdate", this.autoZoom.bind(this));
+
+    // ui
+    this.ui.render(<Ui {...this.atoms} />);
   }
 
   private autoZoom() {
@@ -87,4 +118,51 @@ export class GameplayScene extends BaseScene {
     const scaleFactor = smallestScreenDimension / MIN_VIEWPORT_SIZE;
     this.camera.zoom = Math.max(MIN_ZOOM, Math.floor(scaleFactor));
   }
+}
+
+function Ui(atoms: Atoms) {
+  const inventory = useAtomValue(atoms.inventory);
+  const [showInventory, setShowInventory] = useAtom(atoms.inventoryOpen);
+  const iconSrc = showInventory
+    ? "/ui/inventory_open.png"
+    : "/ui/inventory_closed.png";
+
+  const items = useMemo(
+    () => Object.entries(inventory).filter(([, has]) => has),
+    [inventory],
+  );
+
+  const inventoryButton = (
+    <div className="fixed right-0 bottom-0 scale-[4] origin-bottom-right pointer-events-auto">
+      <div className="relative">
+        <div
+          className="bg-black/50 p-0.5 hover:brightness-110 active:brightness-90"
+          onClick={() => setShowInventory((value) => !value)}
+        >
+          <img draggable="false" src={iconSrc} />
+        </div>
+        <div className="absolute right-0 bottom-full flex items-center justify-center">
+          <div
+            className={classNames(
+              "bg-black/50 flex flex-wrap gap-0.5 p-0.5 duration-300",
+              {
+                "translate-x-full transition ease-in-cubic": !showInventory,
+                "translate-x-0 transition ease-out-cubic": showInventory,
+              },
+            )}
+          >
+            {items.map(([name]) => (
+              <img
+                src={`/items/${name}.png`}
+                style={{ width: 16, height: 16 }}
+                key={name}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return <>{inventoryButton}</>;
 }
