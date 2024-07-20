@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="32" height="20" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="4">
  <tileset firstgid="1" source="sampleSheet.tsx"/>
- <layer id="1" name="Floor" width="32" height="20">
+ <layer id="1" name="Floor" width="32" height="20" locked="1">
   <data encoding="csv">
 0,1610612787,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,1610612787,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -25,7 +25,7 @@
 0,0,1610612787,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,49,3758096434,49
 </data>
  </layer>
- <layer id="6" name="Solid" width="32" height="20">
+ <layer id="6" name="Solid" width="32" height="20" locked="1">
   <properties>
    <property name="solid" type="bool" value="true"/>
   </properties>
@@ -56,11 +56,12 @@
   <object id="1" name="player" gid="125" x="144" y="176" width="16" height="16"/>
   <object id="3" name="bob" gid="89" x="192.333" y="160" width="16" height="16">
    <properties>
-    <property name="wants" value="cheese"/>
+    <property name="npc" value=""/>
+    <property name="wants" value="anvil"/>
    </properties>
   </object>
  </objectgroup>
- <layer id="4" name="Objects" width="32" height="20" visible="0">
+ <layer id="4" name="Objects" width="32" height="20" visible="0" locked="1">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,64,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -84,7 +85,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,82,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="5" name="Carts" width="32" height="20" visible="0">
+ <layer id="5" name="Carts" width="32" height="20" visible="0" locked="1">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
