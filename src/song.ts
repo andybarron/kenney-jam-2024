@@ -6,29 +6,7 @@ export type SongParams = {
   volume?: number;
 };
 
-// TODO: hide/show tracking per-instance instead of global
-let currentlyPlaying: Song | undefined;
-
-// TODO: validate
-function pauseOnHide() {
-  if (currentlyPlaying?.sound.isPlaying()) {
-    currentlyPlaying.pause(true);
-  }
-}
-function resumeOnShow() {
-  if (currentlyPlaying?.sound.isPaused()) {
-    currentlyPlaying.play();
-  }
-}
-
-window.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden" || document.hidden) {
-    pauseOnHide();
-  } else {
-    resumeOnShow();
-  }
-});
-
+// TODO: pause/resume audio on close/open on mobile
 export class Song implements ex.Loadable<Song> {
   readonly sound: ex.Sound;
   readonly volume: number;
@@ -44,21 +22,14 @@ export class Song implements ex.Loadable<Song> {
     this.stopFading();
     this.sound.volume = volume;
     this.sound.play();
-    currentlyPlaying = this;
   }
   stop() {
     this.stopFading();
     this.sound.stop();
-    if (currentlyPlaying === this) {
-      currentlyPlaying = undefined;
-    }
   }
-  pause(resumeOnFocus = false) {
+  pause() {
     this.stopFading();
     this.sound.pause();
-    if (currentlyPlaying === this && !resumeOnFocus) {
-      currentlyPlaying = undefined;
-    }
   }
   private stopFading() {
     clearInterval(this.fadeInterval);
@@ -107,17 +78,14 @@ export class Song implements ex.Loadable<Song> {
     if (!this.sound.isPlaying()) {
       return;
     }
-    if (currentlyPlaying === this) {
-      currentlyPlaying = undefined;
-    }
     return await this.fadeVolume(0, seconds);
   }
   async fadeTo(other: Song, seconds: number): Promise<void> {
-    currentlyPlaying = other;
     await this.fadeOut(seconds / 2);
     return await other.fadeIn(seconds / 2);
   }
 
+  // loadable impl
   data = this;
   async load(): Promise<Song> {
     await this.sound.load();
