@@ -1,7 +1,7 @@
 import * as ex from "excalibur";
 import * as ti from "@excaliburjs/plugin-tiled";
 import { BaseScene } from "~/src/scene.ts";
-import { emptyLoadable, tiles } from "~/src/util.ts";
+import { emptyLoadable, soundWithVolume, tiles } from "~/src/util.ts";
 import { Song } from "~/src/song.ts";
 import { LOAD_DELAY } from "~/src/debug.ts";
 import {
@@ -12,7 +12,7 @@ import {
   type PrimitiveAtom,
   getDefaultStore,
 } from "jotai";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import classNames from "classnames";
 
 const MIN_VIEWPORT_SIZE = 150;
@@ -23,6 +23,10 @@ const songs = {
   face_the_facts: new Song({ url: "/music/face_the_facts.mp3", volume: 0.5 }),
   it_takes_a_hero: new Song({ url: "/music/it_takes_a_hero.mp3", volume: 0.5 }),
 } as const;
+
+const sfx = {
+  inventory: soundWithVolume("/sfx/inventory.wav", 0.5),
+};
 
 type Inventory = Readonly<Record<string, boolean>>;
 type Atoms = {
@@ -43,6 +47,7 @@ export class GameplayScene extends BaseScene {
   override onPreLoad(loader: ex.DefaultLoader): void {
     super.onPreLoad(loader);
     loader.addResources(Object.values(songs));
+    loader.addResources(Object.values(sfx));
     const map = new ti.TiledResource("/sampleMap.tmx");
     Object.assign(window, { map });
     loader.addResource(map);
@@ -74,6 +79,7 @@ export class GameplayScene extends BaseScene {
       });
     });
     player.z = 90;
+
     // player movement
     player.on("postupdate", () => {
       movementDesired = this.input.pointers.isDown(0);
@@ -132,27 +138,33 @@ function Ui(atoms: Atoms) {
     [inventory],
   );
 
+  const toggleInventory = useCallback(() => {
+    sfx.inventory.play();
+    setShowInventory((value) => !value);
+  }, []);
+
   const inventoryButton = (
     <div className="fixed right-0 bottom-0 scale-[4] origin-bottom-right pointer-events-auto">
       <div className="relative">
         <div
           className="bg-black/50 p-0.5 hover:brightness-110 active:brightness-90"
-          onClick={() => setShowInventory((value) => !value)}
+          onClick={toggleInventory}
         >
           <img draggable="false" src={iconSrc} />
         </div>
         <div className="absolute right-0 bottom-full flex items-center justify-center">
           <div
             className={classNames(
-              "bg-black/50 flex flex-wrap gap-0.5 p-0.5 duration-300",
+              "bg-black/50 flex flex-wrap gap-0.5 p-0.5 transition duration-300 origin-bottom",
               {
-                "translate-x-full transition ease-in-cubic": !showInventory,
-                "translate-x-0 transition ease-out-cubic": showInventory,
+                "scale-y-0 ease-in-cubic": !showInventory,
+                "scale-y-100 ease-out-cubic": showInventory,
               },
             )}
           >
             {items.map(([name]) => (
               <img
+                draggable="false"
                 src={`/items/${name}.png`}
                 style={{ width: 16, height: 16 }}
                 key={name}
