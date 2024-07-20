@@ -3,6 +3,7 @@ import * as ti from "@excaliburjs/plugin-tiled";
 import { BaseScene } from "~/src/scene.ts";
 import { emptyLoadable, tiles } from "~/src/util.ts";
 import { Song } from "~/src/song.ts";
+import { ENABLE_DEBUG, LOAD_DELAY } from "~/src/debug.ts";
 
 const MIN_VIEWPORT_SIZE = 150;
 const MIN_ZOOM = 3;
@@ -25,12 +26,8 @@ export class GameplayScene extends BaseScene {
     this.map = map;
 
     // enable delay for testing
-    const params = new URLSearchParams(location.search);
-    const delayValue = params.get("delay");
-    if (delayValue != null) {
-      const parsed = Number.parseInt(delayValue);
-      const seconds = parsed > 0 ? parsed : 10;
-      loader.addResource(emptyLoadable(seconds));
+    if (LOAD_DELAY != null) {
+      loader.addResource(emptyLoadable(LOAD_DELAY));
     }
   }
   override onInitialize(engine: ex.Engine): void {
@@ -80,6 +77,16 @@ export class GameplayScene extends BaseScene {
     this.camera.strategy.elasticToActor(player, 0.05, 0.5);
     this.camera.zoom = 5;
     this.on("postupdate", this.autoZoom.bind(this));
+
+    // debug
+    if (ENABLE_DEBUG) {
+      this.on("postupdate", () => {
+        ex.Debug.drawText(
+          `Music playing ${song.sound.isPlaying()}`,
+          engine.screenToWorldCoordinates(ex.vec(10, 10)),
+        );
+      });
+    }
   }
 
   private autoZoom() {

@@ -1,6 +1,7 @@
 import * as ex from "excalibur";
 import { Loader } from "./loader.tsx";
 import { GameplayScene } from "~/src/scenes/gameplay.tsx";
+import { ENABLE_DEBUG } from "~/src/debug.ts";
 
 window.addEventListener("contextmenu", (e) => {
   e.preventDefault();
@@ -26,3 +27,7 @@ Object.assign(window, { game, ex });
 
 await game.start();
 game.goToScene("gameplay");
+
+if (ENABLE_DEBUG) {
+  game.toggleDebug();
+}
