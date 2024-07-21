@@ -256,8 +256,8 @@
   <object id="18" name="Sleeping Mimic" gid="90" x="720.061" y="336.061" width="16" height="16"/>
   <object id="24" name="Bat" gid="121" x="399.5" y="61.5" width="16" height="16"/>
   <object id="25" name="Bat" gid="121" x="351" y="129.5" width="16" height="16"/>
-  <object id="26" name="Crab" gid="111" x="648.5" y="216.5" width="16" height="16"/>
-  <object id="27" name="Crab" gid="111" x="713" y="160.5" width="16" height="16"/>
+  <object id="26" name="Crab" gid="111" x="654.5" y="220.5" width="16" height="16"/>
+  <object id="27" name="Crab" gid="111" x="700" y="168.5" width="16" height="16"/>
   <object id="28" name="Crab" gid="111" x="585" y="451" width="16" height="16"/>
   <object id="20" name="Knight" gid="97" x="512" y="688" width="16" height="16"/>
   <object id="21" name="Knight" gid="97" x="527" y="543.5" width="16" height="16"/>
