@@ -8,7 +8,12 @@ import {
   tiles,
 } from "~/src/util.ts";
 import { Song } from "~/src/song.ts";
-import { GIVE_ALL_ITEMS, LOAD_DELAY, NOCLIP } from "~/src/debug.ts";
+import {
+  GIVE_ALL_ITEMS,
+  LOAD_DELAY,
+  NOCLIP,
+  INSTANT_WIN,
+} from "~/src/debug.ts";
 import {
   atom,
   useAtom,
@@ -20,12 +25,12 @@ import {
 import { useCallback, useEffect, useRef } from "react";
 import classNames from "classnames";
 
-const MIN_VIEWPORT_SIZE_DEFAULT = 150;
+export const MIN_VIEWPORT_SIZE_DEFAULT = 200;
 const MIN_VIEWPORT_SIZE_NOCLIP = MIN_VIEWPORT_SIZE_DEFAULT * 2;
 const MIN_VIEWPORT_SIZE = NOCLIP
   ? MIN_VIEWPORT_SIZE_NOCLIP
   : MIN_VIEWPORT_SIZE_DEFAULT;
-const MIN_ZOOM_DEFAULT = 3;
+export const MIN_ZOOM_DEFAULT = 3;
 const MIN_ZOOM_NOCLIP = 1;
 const MIN_ZOOM = NOCLIP ? MIN_ZOOM_NOCLIP : MIN_ZOOM_DEFAULT;
 const PLAYER_SPEED_DEFAULT = tiles(4);
@@ -51,7 +56,7 @@ const sfx = {
   yay: soundWithVolume("/sfx/yay.mp3", 0.75),
   pickup: soundWithVolume("/sfx/pickup.wav", 0.75),
   sparkle: soundWithVolume("/sfx/sparkle.mp3", 0.75),
-  footstep: soundWithVolume("/sfx/footstep.mp3", 1.0, true),
+  footstep: soundWithVolume("/sfx/footstep.mp3", 1.0),
 };
 
 const emotes = {
@@ -77,7 +82,6 @@ const imageCache: HTMLImageElement[] = [];
 for (const imageSource of Object.values(items)) {
   imageCache.push(imageFromSrc(imageSource.path));
 }
-console.log(imageCache);
 
 type Inventory = readonly { readonly id: string; readonly name: string }[];
 type Atoms = {
@@ -119,7 +123,7 @@ export class GameplayScene extends BaseScene {
     let winning = false;
     this.map.addToScene(this);
     let song = songs.face_the_facts;
-    song.play();
+    if (!INSTANT_WIN) song.play();
 
     let ducked = false;
     async function playSoundWithDuckedMusic(sound: ex.Sound) {
@@ -150,6 +154,9 @@ export class GameplayScene extends BaseScene {
     let movementDesired = false;
     player.actions.repeatForever((ctx) => {
       ctx.delay(movementDesired ? 100 : 250).callMethod(() => {
+        if (playerBounceOffset > 0 && movementDesired) {
+          sfx.footstep.play();
+        }
         player.graphics.current?.transform.translate(0, playerBounceOffset);
         playerBounceOffset *= -1;
       });
@@ -179,12 +186,6 @@ export class GameplayScene extends BaseScene {
 
           player.vel.size = PLAYER_SPEED;
         }
-      }
-
-      if (movementDesired && !sfx.footstep.isPlaying()) {
-        sfx.footstep.play();
-      } else if (!movementDesired && sfx.footstep.isPlaying()) {
-        sfx.footstep.stop();
       }
     });
 
@@ -265,7 +266,7 @@ export class GameplayScene extends BaseScene {
       });
     }
     let unhappyNpcCount = npcWants.size;
-    const happyNpcs = new Set<ex.Actor>();
+    const happyActors = new Set<ex.Actor>();
 
     // npcs
     for (const npcObject of npcObjects) {
@@ -332,16 +333,17 @@ export class GameplayScene extends BaseScene {
             const canInteract =
               distanceToPlayer <= NPC_PLAYER_INTERACT_DISTANCE;
             // take item and make npc happy if player has item
-            if (
+            const validWin =
               canInteract &&
               !happy &&
               this.store
                 .get(this.atoms.inventory)
-                .find((item) => item.name === desiredItem)
-            ) {
+                .find((item) => item.name === desiredItem);
+            const cheatWin = !happy && INSTANT_WIN;
+            if (validWin || cheatWin) {
               happy = true;
               unhappyNpcCount--;
-              happyNpcs.add(actor);
+              happyActors.add(actor);
               const guardedItem = npcGives.get(actor.name);
               if (guardedItem) {
                 const timer = new ex.Timer({
@@ -354,7 +356,7 @@ export class GameplayScene extends BaseScene {
                 this.add(timer);
                 timer.start();
               }
-              playSoundWithDuckedMusic(sfx.yay);
+              if (validWin) playSoundWithDuckedMusic(sfx.yay);
               emote.graphics.use(emotes.heart.toSprite());
               itemActor?.kill();
               this.store.set(this.atoms.inventory, (items) => {
@@ -513,19 +515,37 @@ export class GameplayScene extends BaseScene {
       if (winning) return;
       if (unhappyNpcCount === 0) {
         winning = true;
-        song.fadeTo(songs.it_takes_a_hero, 1);
-        song = songs.it_takes_a_hero;
+        if (!INSTANT_WIN) {
+          song.fadeTo(songs.it_takes_a_hero, 1);
+          song = songs.it_takes_a_hero;
+        }
       }
     });
 
     // go to victory scene if ready
+    let gone = false;
     this.on("postupdate", () => {
-      if (!winning) return;
+      if (gone || !winning) return;
       const distanceToExit = player.pos.distance(exitPos);
-      if (distanceToExit <= NPC_PLAYER_INTERACT_DISTANCE) {
+      if (distanceToExit <= NPC_PLAYER_INTERACT_DISTANCE || INSTANT_WIN) {
+        gone = true;
         Object.values(sfx).forEach((sfx) => sfx.stop());
         song.fadeTo(songs.the_world_is_ours, 1);
-        this.engine.goToScene("victory");
+        happyActors.add(player);
+        this.engine.goToScene("victory", {
+          sceneActivationData: {
+            actors: [...happyActors].map((original) => {
+              const gfx = original.graphics.current as ex.Sprite;
+              const sprite = gfx.clone();
+              sprite.transform.reset();
+              const actor = new ex.Actor({
+                anchor: ex.vec(0.5, 0.5),
+              });
+              actor.graphics.use(sprite);
+              return actor;
+            }),
+          },
+        });
       }
     });
   }

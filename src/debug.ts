@@ -5,6 +5,7 @@ export const ENABLE_DEBUG = INITIAL_PARAMS.has("debug");
 export const ENABLE_CHEATS = INITIAL_PARAMS.has("ch");
 export const GIVE_ALL_ITEMS = ENABLE_CHEATS && INITIAL_PARAMS.has("it");
 export const NOCLIP = ENABLE_CHEATS && INITIAL_PARAMS.has("nc");
+export const INSTANT_WIN = ENABLE_CHEATS && INITIAL_PARAMS.has("iw");
 
 function getLoadDelay(): number | null {
   const delayValue = INITIAL_PARAMS.get("delay");

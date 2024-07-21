@@ -47,3 +47,8 @@ export function imageFromSrc(src: string) {
   image.src = src;
   return image;
 }
+
+type Indexable<T> = { [key: number]: T; length: number };
+export function sample<T>(sequence: Indexable<T>): T {
+  return sequence[Math.floor(Math.random() * sequence.length)]!;
+}
