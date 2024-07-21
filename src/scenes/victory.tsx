@@ -24,7 +24,6 @@ const PARTY_COLORS = [
   ex.Color.White,
   ex.Color.Yellow,
 ];
-console.log(PARTY_COLORS);
 
 export class VictoryScene extends BaseScene {
   override onInitialize(engine: ex.Engine): void {
