@@ -1,4 +1,5 @@
 import * as ex from "excalibur";
+import { Credits } from "~/src/components/credits.tsx";
 import { BaseScene } from "~/src/scene.ts";
 import { MIN_ZOOM_DEFAULT } from "~/src/scenes/gameplay.tsx";
 import { sample, tiles } from "~/src/util.ts";
@@ -30,11 +31,7 @@ export class VictoryScene extends BaseScene {
     super.onInitialize(engine);
     this.camera.pos.setTo(0, 0);
     this.on("postupdate", this.autoZoom.bind(this));
-    // this.ui.render(
-    //   <div className="fixed left-0">
-
-    //   </div>
-    // )
+    this.ui.render(<Credits />);
     // this.ui.render(
     //   <div className="fixed inset-0 flex items-center justify-center">
     //     <div className="bg-gray-900 bg-opacity-80 text-white p-4">
@@ -51,6 +48,7 @@ export class VictoryScene extends BaseScene {
     // );
   }
   override onActivate(context: ex.SceneActivationContext<unknown>): void {
+    super.onActivate(context);
     const data = context.data;
     const actors: ex.Actor[] = [];
     if (
