@@ -62,10 +62,10 @@ export class VictoryScene extends BaseScene {
       actor.actions.repeatForever((ctx) => {
         ctx.delay(300).callMethod(() => {
           const gfx = actor.graphics.current!;
-          gfx.scale.x *= -1;
           gfx.tint = sample(PARTY_COLORS);
           actor.pos.y += offset;
           offset *= -1;
+          actor.scale.x *= -1;
         });
       });
     }

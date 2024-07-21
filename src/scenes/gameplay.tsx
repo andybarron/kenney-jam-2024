@@ -77,6 +77,10 @@ const items: Record<string, ex.ImageSource> = {
   none: new ex.ImageSource("/items/none.png"),
 };
 
+const images = {
+  arrow: new ex.ImageSource("/ui/arrow.png"),
+};
+
 // cheaty way to force images to load for html img src
 const imageCache: HTMLImageElement[] = [];
 for (const imageSource of Object.values(items)) {
@@ -89,6 +93,11 @@ type Atoms = {
   inventoryOpen: PrimitiveAtom<boolean>;
   pickingUpItem: PrimitiveAtom<boolean>;
   zoom: PrimitiveAtom<number>;
+};
+
+type Objective = {
+  pos: ex.Vector;
+  owner?: ex.Actor;
 };
 
 export class GameplayScene extends BaseScene {
@@ -107,6 +116,7 @@ export class GameplayScene extends BaseScene {
     loader.addResources(Object.values(sfx));
     loader.addResources(Object.values(emotes));
     loader.addResources(Object.values(items));
+    loader.addResources(Object.values(images));
     const map = new ti.TiledResource("/Connection.tmx");
     Object.assign(window, { map });
     loader.addResource(map);
@@ -186,6 +196,34 @@ export class GameplayScene extends BaseScene {
 
           player.vel.size = PLAYER_SPEED;
         }
+      }
+    });
+
+    // objective tracking
+    const arrows: ex.Actor[] = [];
+    const objectives: Objective[] = [];
+    this.on("postupdate", () => {
+      while (arrows.length < objectives.length) {
+        const arrow = new ex.Actor({
+          z: 100,
+        });
+        arrow.graphics.use(images.arrow.toSprite());
+        arrow.graphics.current!.opacity = 0.5;
+        arrows.push(arrow);
+        this.add(arrow);
+      }
+      while (arrows.length > objectives.length) {
+        arrows.pop()!.kill();
+      }
+      for (const [i, arrow] of arrows.entries()) {
+        const objective = objectives[i]!;
+        const distance = tiles(1.5);
+        const diff = objective.pos.sub(player.pos);
+        const angle = diff.toAngle();
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
+        arrow.pos.setTo(player.pos.x + x, player.pos.y + y);
+        arrow.rotation = angle;
       }
     });
 
@@ -269,6 +307,7 @@ export class GameplayScene extends BaseScene {
     const happyActors = new Set<ex.Actor>();
 
     // npcs
+    const metNpcs = new Set<string>();
     for (const npcObject of npcObjects) {
       if (npcObject.name === "player") continue;
       const actors = this.actors.filter((a) => a.name === npcObject.name);
@@ -342,6 +381,13 @@ export class GameplayScene extends BaseScene {
             const cheatWin = !happy && INSTANT_WIN;
             if (validWin || cheatWin) {
               happy = true;
+              // remove objectives associated with this actor
+              let index: number;
+              while (
+                (index = objectives.findIndex((o) => o.owner === actor)) !== -1
+              ) {
+                objectives.splice(index, 1);
+              }
               unhappyNpcCount--;
               happyActors.add(actor);
               const guardedItem = npcGives.get(actor.name);
@@ -379,7 +425,7 @@ export class GameplayScene extends BaseScene {
                     .moveTo(spot.x, spot.y, PLAYER_SPEED_DEFAULT * 2)
                     .repeatForever((ctx) => {
                       ctx.delay(500).callMethod(() => {
-                        actor.graphics.current!.scale.x *= -1;
+                        actor.scale.x *= -1;
                       });
                     });
                 })
@@ -389,6 +435,7 @@ export class GameplayScene extends BaseScene {
             if (canInteract && !emoteVisible) {
               emoteVisible = true;
               emote.actions.scaleTo(VECTOR_ONE, EMOTE_SCALE_SPEED_VECTOR);
+              metNpcs.add(actor.name);
             } else if (!canInteract && emoteVisible) {
               emoteVisible = false;
               emote.actions.scaleTo(ex.vec(0, 0), EMOTE_SCALE_SPEED_VECTOR);
@@ -496,6 +543,16 @@ export class GameplayScene extends BaseScene {
                       { name: canonicalName, id: Math.random().toString() },
                     ];
                   });
+                  // if player has met npc who wants this item,
+                  // add an objective pointing to that npc's location
+                  for (const [npcName, itemName] of npcWants) {
+                    if (itemName === canonicalName && metNpcs.has(npcName)) {
+                      const npc = this.actors.find((a) => a.name === npcName);
+                      if (npc) {
+                        objectives.push({ pos: npc.pos, owner: npc });
+                      }
+                    }
+                  }
                 })
                 .delay(1_000)
                 .callMethod(() => {
@@ -515,6 +572,7 @@ export class GameplayScene extends BaseScene {
       if (winning) return;
       if (unhappyNpcCount === 0) {
         winning = true;
+        objectives.push({ pos: exitPos });
         if (!INSTANT_WIN) {
           song.fadeTo(songs.it_takes_a_hero, 1);
           song = songs.it_takes_a_hero;
@@ -527,7 +585,7 @@ export class GameplayScene extends BaseScene {
     this.on("postupdate", () => {
       if (gone || !winning) return;
       const distanceToExit = player.pos.distance(exitPos);
-      if (distanceToExit <= NPC_PLAYER_INTERACT_DISTANCE || INSTANT_WIN) {
+      if (distanceToExit <= NPC_PLAYER_INTERACT_DISTANCE) {
         gone = true;
         Object.values(sfx).forEach((sfx) => sfx.stop());
         song.fadeTo(songs.the_world_is_ours, 1);
@@ -536,8 +594,9 @@ export class GameplayScene extends BaseScene {
           sceneActivationData: {
             actors: [...happyActors].map((original) => {
               const gfx = original.graphics.current as ex.Sprite;
-              const sprite = gfx.clone();
-              sprite.transform.reset();
+              const sprite = ex.Sprite.from(gfx.image);
+              sprite.sourceView = gfx.sourceView;
+              sprite.destSize = gfx.destSize;
               const actor = new ex.Actor({
                 anchor: ex.vec(0.5, 0.5),
               });
