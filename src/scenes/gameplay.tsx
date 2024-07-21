@@ -22,7 +22,7 @@ import {
   type PrimitiveAtom,
   getDefaultStore,
 } from "jotai";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import classNames from "classnames";
 
 export const MIN_VIEWPORT_SIZE_DEFAULT = 200;
@@ -79,11 +79,16 @@ const items: Record<string, ex.ImageSource> = {
 
 const images = {
   arrow: new ex.ImageSource("/ui/arrow.png"),
+  finger: new ex.ImageSource("/ui/finger.png"),
+  finger_down: new ex.ImageSource("/ui/finger_down.png"),
 };
 
 // cheaty way to force images to load for html img src
 const imageCache: HTMLImageElement[] = [];
 for (const imageSource of Object.values(items)) {
+  imageCache.push(imageFromSrc(imageSource.path));
+}
+for (const imageSource of Object.values(images)) {
   imageCache.push(imageFromSrc(imageSource.path));
 }
 
@@ -172,6 +177,31 @@ export class GameplayScene extends BaseScene {
       });
     });
     player.z = 90;
+
+    // movement tutorial
+    const pokeAnim = new ex.Animation({
+      frames: [
+        {
+          graphic: images.finger.toSprite(),
+          duration: 500,
+        },
+        {
+          graphic: images.finger_down.toSprite(),
+          duration: 1_000,
+        },
+      ],
+    });
+    const poke = new ex.Actor();
+    poke.graphics.use(pokeAnim);
+    poke.pos.x = player.pos.x + tiles(1);
+    poke.pos.y = player.pos.y + tiles(2);
+    this.add(poke);
+    poke.on("postupdate", () => {
+      const distanceToPlayer = player.pos.distance(poke.pos);
+      if (distanceToPlayer <= tiles(1)) {
+        poke.kill();
+      }
+    });
 
     // player movement
     player.on("postupdate", () => {
@@ -646,8 +676,10 @@ function Ui(atoms: Atoms) {
     };
   }, []);
 
+  const [hasOpenedManually, setHasOpenedManually] = useState(false);
   const toggleInventory = useCallback(() => {
     setInventoryOpen((value) => !value);
+    setHasOpenedManually(true);
   }, []);
 
   const iconSrc = showInventory
@@ -665,6 +697,13 @@ function Ui(atoms: Atoms) {
           onClick={toggleInventory}
         >
           <img draggable="false" src={iconSrc} />
+          {!hasOpenedManually && (
+            <img
+              draggable="false"
+              src={images.finger.path}
+              className="absolute left-[8px] top-[8px] scale-50"
+            />
+          )}
         </div>
         <div className="absolute right-0 overflow-visible bottom-full flex items-end justify-end">
           <div
@@ -676,6 +715,13 @@ function Ui(atoms: Atoms) {
               },
             )}
           >
+            <img
+              className="opacity-75"
+              draggable="false"
+              src={`/items/none.png`}
+              style={{ width: 16, height: 16 }}
+              onClick={toggleInventory}
+            />
             {items.map(({ name, id }, i) => (
               <img
                 className="shine"
@@ -685,14 +731,6 @@ function Ui(atoms: Atoms) {
                 key={id}
               />
             ))}
-            {items.length === 0 && (
-              <img
-                className="opacity-50"
-                draggable="false"
-                src={`/items/none.png`}
-                style={{ width: 16, height: 16 }}
-              />
-            )}
           </div>
         </div>
       </div>

@@ -22,6 +22,11 @@ const SFX_CREDITS = [
 ];
 
 export function Credits() {
+  const playAgain: React.MouseEventHandler = (e) => {
+    e.preventDefault();
+    window.location.reload();
+  };
+
   return (
     <div className="fade-in fixed inset-0 flex flex-col items-start justify-start">
       <div className="bg-black/50 p-8 text-white pointer-events-auto">
@@ -65,19 +70,28 @@ export function Credits() {
         <h1 className="text-4xl font-light mb-4">Special thanks</h1>
         <p>😍 Al & Alfie</p>
         <p>⚡️ Monster Zero Ultra</p>
-        <p>👩‍🍼 Our moms</p>
+        <p className="mb-8">👩‍🍼 Our moms</p>
+        <Link to="#" onClick={playAgain}>
+          Play again?
+        </Link>
       </div>
     </div>
   );
 }
 
-type LinkProps = { to: string; children?: any };
-function Link({ to, children }: LinkProps) {
+type LinkProps = {
+  to: string;
+  onClick?: React.MouseEventHandler;
+  children?: any;
+};
+function Link({ to, onClick, children }: LinkProps) {
   return (
     <a
       className="underline text-cyan-400 hover:text-cyan-300 transition"
       href={to}
       target="_blank"
+      onClick={onClick}
+      rel="noopener noreferrer"
     >
       {children}
     </a>
