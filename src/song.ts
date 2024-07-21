@@ -38,7 +38,11 @@ export class Song implements ex.Loadable<Song> {
     this.onFadeEnd?.();
     delete this.onFadeEnd;
   }
-  private fadeVolume(endVolume: number, seconds: number): Promise<void> {
+  fadeVolume(
+    endVolume: number,
+    seconds: number,
+    fadeOutAction: "pause" | "stop" = "stop",
+  ): Promise<void> {
     this.stopFading();
     const volumePerSecond = (endVolume - this.sound.volume) / seconds;
     if (volumePerSecond === 0) return Promise.resolve();
@@ -59,7 +63,7 @@ export class Song implements ex.Loadable<Song> {
         this.sound.volume = endVolume;
         this.stopFading();
         if (endVolume === 0) {
-          this.sound.stop();
+          this.sound[fadeOutAction]();
         }
       } else {
         this.sound.volume = targetVolume;
@@ -74,11 +78,14 @@ export class Song implements ex.Loadable<Song> {
     this.play(0);
     return await this.fadeVolume(this.volume, seconds);
   }
-  async fadeOut(seconds: number): Promise<void> {
+  async fadeOut(
+    seconds: number,
+    action: "pause" | "stop" = "stop",
+  ): Promise<void> {
     if (!this.sound.isPlaying()) {
       return;
     }
-    return await this.fadeVolume(0, seconds);
+    return await this.fadeVolume(0, seconds, action);
   }
   async fadeTo(other: Song, seconds: number): Promise<void> {
     await this.fadeOut(seconds / 2);

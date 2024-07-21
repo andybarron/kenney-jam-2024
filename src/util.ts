@@ -42,3 +42,9 @@ export function makeResolvablePromise<T>() {
 }
 
 export const TOUCH_SUPPORTED = "ontouchstart" in window;
+
+export function imageFromSrc(src: string) {
+  const image = new Image();
+  image.src = src;
+  return image;
+}
