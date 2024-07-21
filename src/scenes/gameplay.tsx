@@ -40,6 +40,10 @@ const ITEM_PICKUP_DISTANCE = tiles(1.5);
 const songs = {
   face_the_facts: new Song({ url: "/music/face_the_facts.mp3", volume: 0.4 }),
   it_takes_a_hero: new Song({ url: "/music/it_takes_a_hero.mp3", volume: 0.5 }),
+  the_world_is_ours: new Song({
+    url: "/music/the_world_is_ours.mp3",
+    volume: 0.6,
+  }),
 };
 
 const sfx = {
@@ -194,6 +198,8 @@ export class GameplayScene extends BaseScene {
     this.ui.render(<Ui {...this.atoms} />);
 
     // level data
+    const exit = this.map.getObjectsByName("Exit")[0]!;
+    const exitPos = ex.vec(exit.x, exit.y);
     const happySpots = this.map
       .getObjectLayers("Spots")[0]!
       .objects.map((obj) => ex.vec(obj.x, obj.y));
@@ -509,6 +515,17 @@ export class GameplayScene extends BaseScene {
         winning = true;
         song.fadeTo(songs.it_takes_a_hero, 1);
         song = songs.it_takes_a_hero;
+      }
+    });
+
+    // go to victory scene if ready
+    this.on("postupdate", () => {
+      if (!winning) return;
+      const distanceToExit = player.pos.distance(exitPos);
+      if (distanceToExit <= NPC_PLAYER_INTERACT_DISTANCE) {
+        Object.values(sfx).forEach((sfx) => sfx.stop());
+        song.fadeTo(songs.the_world_is_ours, 1);
+        this.engine.goToScene("victory");
       }
     });
   }

@@ -2,6 +2,7 @@ import * as ex from "excalibur";
 import { Loader } from "./loader.tsx";
 import { GameplayScene } from "~/src/scenes/gameplay.tsx";
 import { ENABLE_DEBUG } from "~/src/debug.ts";
+import { VictoryScene } from "~/src/scenes/victory.tsx";
 
 window.addEventListener("contextmenu", (e) => {
   e.preventDefault();
@@ -20,6 +21,7 @@ const game = new ex.Engine({
       scene: new GameplayScene(),
       loader: new Loader(),
     },
+    victory: new VictoryScene(),
   },
 });
 
