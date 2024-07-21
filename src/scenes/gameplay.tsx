@@ -8,7 +8,7 @@ import {
   tiles,
 } from "~/src/util.ts";
 import { Song } from "~/src/song.ts";
-import { LOAD_DELAY } from "~/src/debug.ts";
+import { GIVE_ALL_ITEMS, LOAD_DELAY, NOCLIP } from "~/src/debug.ts";
 import {
   atom,
   useAtom,
@@ -20,9 +20,17 @@ import {
 import { useCallback, useEffect, useRef } from "react";
 import classNames from "classnames";
 
-const MIN_VIEWPORT_SIZE = 150;
-const MIN_ZOOM = 3;
-const PLAYER_SPEED = tiles(3);
+const MIN_VIEWPORT_SIZE_DEFAULT = 150;
+const MIN_VIEWPORT_SIZE_NOCLIP = MIN_VIEWPORT_SIZE_DEFAULT * 2;
+const MIN_VIEWPORT_SIZE = NOCLIP
+  ? MIN_VIEWPORT_SIZE_NOCLIP
+  : MIN_VIEWPORT_SIZE_DEFAULT;
+const MIN_ZOOM_DEFAULT = 3;
+const MIN_ZOOM_NOCLIP = 1;
+const MIN_ZOOM = NOCLIP ? MIN_ZOOM_NOCLIP : MIN_ZOOM_DEFAULT;
+const PLAYER_SPEED_DEFAULT = tiles(4);
+const PLAYER_SPEED_NOCLIP = PLAYER_SPEED_DEFAULT * 5;
+const PLAYER_SPEED = NOCLIP ? PLAYER_SPEED_NOCLIP : PLAYER_SPEED_DEFAULT;
 const NPC_PLAYER_INTERACT_DISTANCE = tiles(2);
 const EMOTE_SCALE_SPEED = 10;
 const EMOTE_SCALE_SPEED_VECTOR = ex.vec(EMOTE_SCALE_SPEED, EMOTE_SCALE_SPEED);
@@ -46,7 +54,25 @@ const emotes = {
   heart: new ex.ImageSource("/emotes/heart.png"),
 };
 
-const items: Record<string, ex.ImageSource> = {};
+const items: Record<string, ex.ImageSource> = {
+  axe: new ex.ImageSource("/items/axe.png"),
+  bucket: new ex.ImageSource("/items/bucket.png"),
+  fake_rat: new ex.ImageSource("/items/fake_rat.png"),
+  gold: new ex.ImageSource("/items/gold.png"),
+  gravestone: new ex.ImageSource("/items/gravestone.png"),
+  juice: new ex.ImageSource("/items/juice.png"),
+  mushroom: new ex.ImageSource("/items/mushroom.png"),
+  shovel: new ex.ImageSource("/items/shovel.png"),
+  wizard_staff: new ex.ImageSource("/items/wizard_staff.png"),
+  none: new ex.ImageSource("/items/none.png"),
+};
+
+// cheaty way to force images to load for html img src
+const imageCache: HTMLImageElement[] = [];
+for (const imageSource of Object.values(items)) {
+  imageCache.push(imageFromSrc(imageSource.path));
+}
+console.log(imageCache);
 
 type Inventory = readonly { readonly id: string; readonly name: string }[];
 type Atoms = {
@@ -57,6 +83,7 @@ type Atoms = {
 };
 
 export class GameplayScene extends BaseScene {
+  override backgroundColor = ex.Color.fromHex("#763b36");
   store = getDefaultStore();
   atoms: Atoms = {
     inventory: atom<Inventory>([]),
@@ -108,6 +135,9 @@ export class GameplayScene extends BaseScene {
     const player = this.actors.find((a) => a.name === "player")!;
     player.collider.set(ex.Shape.Box(8, 8));
     player.body.collisionType = ex.CollisionType.Active;
+    if (NOCLIP) {
+      player.body.collisionType = ex.CollisionType.PreventCollision;
+    }
     Object.assign(window, { player });
     player.anchor.setTo(0.5, 0.5);
     let playerBounceOffset = -1;
@@ -204,10 +234,12 @@ export class GameplayScene extends BaseScene {
       }
     }
     const guardedItems = new Set(npcGives.values());
-    this.store.set(
-      this.atoms.inventory,
-      [...itemNames].map((name) => ({ id: Math.random().toString(), name })),
-    );
+    if (GIVE_ALL_ITEMS) {
+      this.store.set(
+        this.atoms.inventory,
+        [...itemNames].map((name) => ({ id: Math.random().toString(), name })),
+      );
+    }
 
     if (npcWants.size !== itemNames.size) {
       console.warn("NPC wants/item count mismatch", {
@@ -219,100 +251,103 @@ export class GameplayScene extends BaseScene {
     // npcs
     for (const npcObject of npcObjects) {
       if (npcObject.name === "player") continue;
-      const actor = this.actors.find((a) => a.name === npcObject.name);
-      if (!actor) {
+      const actors = this.actors.filter((a) => a.name === npcObject.name);
+      if (!actors.length) {
         console.warn(`Actor not found for NPC object: ${npcObject.name}`);
         continue;
       }
-      let happy = false;
-      // visuals
-      actor.z = 80;
-      fixTiledActor(actor);
-      // npc collision
-      actor.body.collisionType = ex.CollisionType.Fixed;
-      // npc animation
-      let bounceOffset = 1;
-      actor.actions.repeatForever((ctx) => {
-        ctx.delay(happy ? 250 : 500).callMethod(() => {
-          actor.graphics.current?.transform.translate(0, bounceOffset);
-          bounceOffset *= -1;
+      for (const actor of actors) {
+        let happy = false;
+        // visuals
+        actor.z = 80;
+        fixTiledActor(actor);
+        // npc collision
+        actor.body.collisionType = ex.CollisionType.Fixed;
+        // npc animation
+        let bounceOffset = 1;
+        actor.actions.repeatForever((ctx) => {
+          ctx.delay(happy ? 250 : 500).callMethod(() => {
+            actor.graphics.current?.transform.translate(0, bounceOffset);
+            bounceOffset *= -1;
+          });
         });
-      });
-      // npc emote
-      const desiredItem = npcWants.get(actor.name);
-      if (typeof desiredItem === "string") {
-        const itemSprite = items[desiredItem]?.toSprite();
-        const sprite = emotes.blank.toSprite();
-        const emoteContainer = new ex.Actor({});
-        const emote = new ex.Actor({
-          anchor: ex.vec(0.5, 1),
-          y: -10,
-        });
-        emote.graphics.use(sprite);
-        emote.z = 85;
-        emote.scale.setTo(0, 0);
-        actor.addChild(emoteContainer);
-        emoteContainer.addChild(emote);
-        let itemActor: ex.Actor | undefined;
-        if (itemSprite) {
-          itemActor = new ex.Actor({
+        // npc emote
+        const desiredItem = npcWants.get(actor.name);
+        if (typeof desiredItem === "string") {
+          const itemSprite = items[desiredItem]?.toSprite();
+          const sprite = emotes.blank.toSprite();
+          const emoteContainer = new ex.Actor({});
+          const emote = new ex.Actor({
+            anchor: ex.vec(0.5, 1),
             y: -10,
           });
-          itemActor.graphics.use(itemSprite);
-          itemActor.z = emote.z + 1;
-          emote.addChild(itemActor);
-        }
-        let emoteVisible = false;
-
-        // bounce emote up and down
-        const offsets = [1, -1, -1, 1];
-        let i = 0;
-        emoteContainer.actions.repeatForever((ctx) => {
-          ctx.delay(happy ? 250 : 500).callMethod(() => {
-            emoteContainer.pos.x += offsets[i]!;
-            i = (i + 1) % offsets.length;
-          });
-        });
-
-        // interact with player
-        actor.on("postupdate", () => {
-          const distanceToPlayer = player.pos.distance(actor.pos);
-          const canInteract = distanceToPlayer <= NPC_PLAYER_INTERACT_DISTANCE;
-          // take item and make npc happy if player has item
-          if (
-            canInteract &&
-            !happy &&
-            this.store
-              .get(this.atoms.inventory)
-              .find((item) => item.name === desiredItem)
-          ) {
-            happy = true;
-            const guardedItem = npcGives.get(actor.name);
-            if (guardedItem) {
-              guardedItems.delete(guardedItem);
-            }
-            playSoundWithDuckedMusic(sfx.yay);
-            emote.graphics.use(emotes.heart.toSprite());
-            itemActor?.kill();
-            this.store.set(this.atoms.inventory, (items) => {
-              const index = items.findIndex(
-                (item) => item.name === desiredItem,
-              );
-              if (index !== -1) {
-                return items.filter((_, i) => i !== index);
-              }
-              return items;
+          emote.graphics.use(sprite);
+          emote.z = 85;
+          emote.scale.setTo(0, 0);
+          actor.addChild(emoteContainer);
+          emoteContainer.addChild(emote);
+          let itemActor: ex.Actor | undefined;
+          if (itemSprite) {
+            itemActor = new ex.Actor({
+              y: -10,
             });
+            itemActor.graphics.use(itemSprite);
+            itemActor.z = emote.z + 1;
+            emote.addChild(itemActor);
           }
-          // hide/show emote based on player distance
-          if (canInteract && !emoteVisible) {
-            emoteVisible = true;
-            emote.actions.scaleTo(VECTOR_ONE, EMOTE_SCALE_SPEED_VECTOR);
-          } else if (!canInteract && emoteVisible) {
-            emoteVisible = false;
-            emote.actions.scaleTo(ex.vec(0, 0), EMOTE_SCALE_SPEED_VECTOR);
-          }
-        });
+          let emoteVisible = false;
+
+          // bounce emote up and down
+          const offsets = [1, -1, -1, 1];
+          let i = 0;
+          emoteContainer.actions.repeatForever((ctx) => {
+            ctx.delay(happy ? 250 : 500).callMethod(() => {
+              emoteContainer.pos.x += offsets[i]!;
+              i = (i + 1) % offsets.length;
+            });
+          });
+
+          // interact with player
+          actor.on("postupdate", () => {
+            const distanceToPlayer = player.pos.distance(actor.pos);
+            const canInteract =
+              distanceToPlayer <= NPC_PLAYER_INTERACT_DISTANCE;
+            // take item and make npc happy if player has item
+            if (
+              canInteract &&
+              !happy &&
+              this.store
+                .get(this.atoms.inventory)
+                .find((item) => item.name === desiredItem)
+            ) {
+              happy = true;
+              const guardedItem = npcGives.get(actor.name);
+              if (guardedItem) {
+                guardedItems.delete(guardedItem);
+              }
+              playSoundWithDuckedMusic(sfx.yay);
+              emote.graphics.use(emotes.heart.toSprite());
+              itemActor?.kill();
+              this.store.set(this.atoms.inventory, (items) => {
+                const index = items.findIndex(
+                  (item) => item.name === desiredItem,
+                );
+                if (index !== -1) {
+                  return items.filter((_, i) => i !== index);
+                }
+                return items;
+              });
+            }
+            // hide/show emote based on player distance
+            if (canInteract && !emoteVisible) {
+              emoteVisible = true;
+              emote.actions.scaleTo(VECTOR_ONE, EMOTE_SCALE_SPEED_VECTOR);
+            } else if (!canInteract && emoteVisible) {
+              emoteVisible = false;
+              emote.actions.scaleTo(ex.vec(0, 0), EMOTE_SCALE_SPEED_VECTOR);
+            }
+          });
+        }
       }
     }
 
@@ -360,6 +395,12 @@ export class GameplayScene extends BaseScene {
           const gfx = actor.graphics.current;
           if (gfx) {
             gfx.tint = ex.Color.White;
+
+            // TODO: Copy inventory image from sprite
+            // instead of hard-coding URL?
+            // if (gfx instanceof ex.Sprite) {
+            //   const { src } = gfx.image.image;
+            // }
           }
           const animationTime = 0.25;
           const distanceToPlayer = actor.pos.distance(player.pos);
@@ -492,6 +533,14 @@ function Ui(atoms: Atoms) {
                 key={id}
               />
             ))}
+            {items.length === 0 && (
+              <img
+                className="opacity-50"
+                draggable="false"
+                src={`/items/none.png`}
+                style={{ width: 16, height: 16 }}
+              />
+            )}
           </div>
         </div>
       </div>
