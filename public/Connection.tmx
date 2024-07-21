@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="65" height="60" tilewidth="16" tileheight="16" infinite="0" nextlayerid="12" nextobjectid="31">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="65" height="60" tilewidth="16" tileheight="16" infinite="0" nextlayerid="13" nextobjectid="42">
  <tileset firstgid="1" source="sampleSheet.tsx"/>
  <tileset firstgid="133" source="tinytown.tsx"/>
  <layer id="1" name="Floor" width="65" height="60">
@@ -262,6 +262,38 @@
   <object id="20" name="Knight" gid="97" x="512" y="688" width="16" height="16"/>
   <object id="21" name="Knight" gid="97" x="527" y="543.5" width="16" height="16"/>
   <object id="22" name="Knight" gid="97" x="383" y="300.833" width="16" height="16"/>
+ </objectgroup>
+ <objectgroup id="12" name="Spots">
+  <object id="31" x="904.5" y="186">
+   <point/>
+  </object>
+  <object id="32" x="923" y="200">
+   <point/>
+  </object>
+  <object id="33" x="1015.5" y="187.5">
+   <point/>
+  </object>
+  <object id="34" x="999" y="202">
+   <point/>
+  </object>
+  <object id="35" x="1017.5" y="226.5">
+   <point/>
+  </object>
+  <object id="36" x="984" y="231">
+   <point/>
+  </object>
+  <object id="37" x="1005.5" y="258.5">
+   <point/>
+  </object>
+  <object id="38" x="986.5" y="284">
+   <point/>
+  </object>
+  <object id="39" x="1016" y="301.5">
+   <point/>
+  </object>
+  <object id="40" x="905.5" y="219.5">
+   <point/>
+  </object>
  </objectgroup>
  <layer id="4" name="Objects" width="65" height="60" visible="0">
   <data encoding="csv">

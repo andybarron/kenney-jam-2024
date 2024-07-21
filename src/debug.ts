@@ -2,9 +2,9 @@ let INITIAL_PARAMS = new URLSearchParams(location.search);
 
 export const LOAD_DELAY = getLoadDelay();
 export const ENABLE_DEBUG = INITIAL_PARAMS.has("debug");
-export const CHEATS = INITIAL_PARAMS.getAll("cheat");
-export const GIVE_ALL_ITEMS = CHEATS.includes("items");
-export const NOCLIP = CHEATS.includes("noclip");
+export const ENABLE_CHEATS = INITIAL_PARAMS.has("ch");
+export const GIVE_ALL_ITEMS = ENABLE_CHEATS && INITIAL_PARAMS.has("it");
+export const NOCLIP = ENABLE_CHEATS && INITIAL_PARAMS.has("nc");
 
 function getLoadDelay(): number | null {
   const delayValue = INITIAL_PARAMS.get("delay");

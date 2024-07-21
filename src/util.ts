@@ -19,16 +19,15 @@ export function tiles(n: number) {
   return 16 * n;
 }
 
-export function soundWithVolume(url: string, volume: number) {
+export function soundWithVolume(
+  url: string,
+  volume: number,
+  loop: boolean = false,
+) {
   const sound = new ex.Sound(url);
   sound.volume = volume;
+  sound.loop = loop;
   return sound;
-}
-
-export function musicWithVolume(url: string, volume: number) {
-  const music = soundWithVolume(url, volume);
-  music.loop = true;
-  return music;
 }
 
 export function makeResolvablePromise<T>() {

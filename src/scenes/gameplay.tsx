@@ -38,7 +38,7 @@ const VECTOR_ONE = ex.vec(1, 1);
 const ITEM_PICKUP_DISTANCE = tiles(1.5);
 
 const songs = {
-  face_the_facts: new Song({ url: "/music/face_the_facts.mp3", volume: 0.5 }),
+  face_the_facts: new Song({ url: "/music/face_the_facts.mp3", volume: 0.4 }),
   it_takes_a_hero: new Song({ url: "/music/it_takes_a_hero.mp3", volume: 0.5 }),
 };
 
@@ -47,6 +47,7 @@ const sfx = {
   yay: soundWithVolume("/sfx/yay.mp3", 0.75),
   pickup: soundWithVolume("/sfx/pickup.wav", 0.75),
   sparkle: soundWithVolume("/sfx/sparkle.mp3", 0.75),
+  footstep: soundWithVolume("/sfx/footstep.mp3", 1.0, true),
 };
 
 const emotes = {
@@ -111,8 +112,9 @@ export class GameplayScene extends BaseScene {
   }
   override onInitialize(engine: ex.Engine): void {
     super.onInitialize(engine);
+    let winning = false;
     this.map.addToScene(this);
-    const song = songs.face_the_facts;
+    let song = songs.face_the_facts;
     song.play();
 
     let ducked = false;
@@ -174,6 +176,12 @@ export class GameplayScene extends BaseScene {
           player.vel.size = PLAYER_SPEED;
         }
       }
+
+      if (movementDesired && !sfx.footstep.isPlaying()) {
+        sfx.footstep.play();
+      } else if (!movementDesired && sfx.footstep.isPlaying()) {
+        sfx.footstep.stop();
+      }
     });
 
     // camera
@@ -186,6 +194,9 @@ export class GameplayScene extends BaseScene {
     this.ui.render(<Ui {...this.atoms} />);
 
     // level data
+    const happySpots = this.map
+      .getObjectLayers("Spots")[0]!
+      .objects.map((obj) => ex.vec(obj.x, obj.y));
     const npcObjects = this.map.getObjectLayers("Characters")[0]!.objects;
     const itemObjects = this.map.getObjectLayers("Items")[0]!.objects;
     const itemNames = new Set<string>();
@@ -247,6 +258,8 @@ export class GameplayScene extends BaseScene {
         itemNames,
       });
     }
+    let unhappyNpcCount = npcWants.size;
+    const happyNpcs = new Set<ex.Actor>();
 
     // npcs
     for (const npcObject of npcObjects) {
@@ -321,9 +334,19 @@ export class GameplayScene extends BaseScene {
                 .find((item) => item.name === desiredItem)
             ) {
               happy = true;
+              unhappyNpcCount--;
+              happyNpcs.add(actor);
               const guardedItem = npcGives.get(actor.name);
               if (guardedItem) {
-                guardedItems.delete(guardedItem);
+                const timer = new ex.Timer({
+                  fcn: () => {
+                    guardedItems.delete(guardedItem);
+                  },
+                  interval: 500,
+                  repeats: false,
+                });
+                this.add(timer);
+                timer.start();
               }
               playSoundWithDuckedMusic(sfx.yay);
               emote.graphics.use(emotes.heart.toSprite());
@@ -337,6 +360,22 @@ export class GameplayScene extends BaseScene {
                 }
                 return items;
               });
+              const temp = new ex.Actor();
+              this.add(temp);
+              temp.actions
+                .delay(1_000)
+                .callMethod(() => {
+                  actor.actions.clearActions();
+                  const spot = happySpots.pop() ?? ex.Vector.Zero;
+                  actor.actions
+                    .moveTo(spot.x, spot.y, PLAYER_SPEED_DEFAULT * 2)
+                    .repeatForever((ctx) => {
+                      ctx.delay(500).callMethod(() => {
+                        actor.graphics.current!.scale.x *= -1;
+                      });
+                    });
+                })
+                .die();
             }
             // hide/show emote based on player distance
             if (canInteract && !emoteVisible) {
@@ -367,6 +406,10 @@ export class GameplayScene extends BaseScene {
       actor.body.collisionType = ex.CollisionType.PreventCollision;
       let nextTint: ex.Color = ex.Color.Blue;
       // item flash anim
+      actor.on("postupdate", () => {
+        const shouldHide = guardedItems.has(canonicalName);
+        actor.graphics.current!.opacity = shouldHide ? 0 : 1;
+      });
       actor.actions.repeatForever((ctx) => {
         ctx.delay(500).callMethod(() => {
           const gfx = actor.graphics.current;
@@ -426,8 +469,10 @@ export class GameplayScene extends BaseScene {
           ]);
           // open inventory and fly item to player with sound
           this.store.set(this.atoms.pickingUpItem, true);
-          sfx.pickup.play();
           actor.actions
+            .callMethod(() => {
+              sfx.pickup.play();
+            })
             .runAction(parallel)
             .callMethod(() => {
               const temp = new ex.Actor();
@@ -455,6 +500,17 @@ export class GameplayScene extends BaseScene {
         }
       });
     }
+
+    // victory screeeeech
+    this.on("postupdate", () => {
+      if (ducked) return; // prevent music weirdness
+      if (winning) return;
+      if (unhappyNpcCount === 0) {
+        winning = true;
+        song.fadeTo(songs.it_takes_a_hero, 1);
+        song = songs.it_takes_a_hero;
+      }
+    });
   }
 
   private autoZoom() {
