@@ -23,7 +23,7 @@ const SFX_CREDITS = [
 
 export function Credits() {
   return (
-    <div className="fixed inset-0 flex flex-col items-start justify-start">
+    <div className="fade-in fixed inset-0 flex flex-col items-start justify-start">
       <div className="bg-black/50 p-8 text-white pointer-events-auto">
         <h1 className="text-4xl font-light mb-4">Credits</h1>
         <p className="text-xl">

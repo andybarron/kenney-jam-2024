@@ -26,25 +26,12 @@ const PARTY_COLORS = [
 ];
 
 export class VictoryScene extends BaseScene {
+  override backgroundColor = ex.Color.fromHex("#222222");
   override onInitialize(engine: ex.Engine): void {
     super.onInitialize(engine);
     this.camera.pos.setTo(0, 0);
     this.on("postupdate", this.autoZoom.bind(this));
     this.ui.render(<Credits />);
-    // this.ui.render(
-    //   <div className="fixed inset-0 flex items-center justify-center">
-    //     <div className="bg-gray-900 bg-opacity-80 text-white p-4">
-    //       <h1 className="text-4xl">Victory!</h1>
-    //       <p className="text-lg">You have defeated the evil wizard!</p>
-    //       <button
-    //         className="bg-gray-800 text-white px-4 py-2 rounded mt-4"
-    //         onClick={() => this.engine.goToScene("title")}
-    //       >
-    //         Return to title
-    //       </button>
-    //     </div>
-    //   </div>,
-    // );
   }
   override onActivate(context: ex.SceneActivationContext<unknown>): void {
     super.onActivate(context);
@@ -63,7 +50,6 @@ export class VictoryScene extends BaseScene {
       }
     }
     const radius = tiles(2);
-    const values: any[] = [];
     // place all actors in a circle equally spaced
     for (const [i, actor] of actors.entries()) {
       const angle = Math.PI * 2 * (i / actors.length);
@@ -72,12 +58,14 @@ export class VictoryScene extends BaseScene {
       actor.pos.setTo(x, y);
       actor.body.collisionType = ex.CollisionType.PreventCollision;
       this.add(actor);
-      values.push({ x, y });
+      let offset = 1 * (Math.random() < 0.5 ? 1 : -1);
       actor.actions.repeatForever((ctx) => {
-        ctx.delay(500).callMethod(() => {
+        ctx.delay(300).callMethod(() => {
           const gfx = actor.graphics.current!;
           gfx.scale.x *= -1;
           gfx.tint = sample(PARTY_COLORS);
+          actor.pos.y += offset;
+          offset *= -1;
         });
       });
     }
